@@ -1,0 +1,33 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { songHref } from '../config/site';
+import { coverColor, isOriginalVocal, songRoles, songYear } from '../utils/songMeta';
+
+interface Props {
+  song: CollectionEntry<'songs'>;
+}
+
+const { song } = Astro.props;
+const color = coverColor(song.data);
+const computedRoles = songRoles(song.data);
+const typeLabel = computedRoles[0] ?? (isOriginalVocal(song.data) ? '原唱' : '作品');
+---
+
+<a class="song-card" href={songHref(song.id)} style={`--card-color: ${color}`}>
+  <span class="song-card__stripe"></span>
+  <div class="song-card__body">
+    <div class="song-card__meta">
+      <span>{song.data.album}</span>
+      <span>{songYear(song.data)}</span>
+    </div>
+    <h2>{song.data.title}</h2>
+    <div class="cassette-window" aria-hidden="true">
+      <span></span>
+      <i></i>
+      <span></span>
+    </div>
+    <div class="chip-row">
+      <span class="chip chip--warm">{typeLabel}</span>
+    </div>
+  </div>
+</a>

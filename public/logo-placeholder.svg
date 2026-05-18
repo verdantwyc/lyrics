@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="temporary logo">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#930531"/>
+      <stop offset="0.55" stop-color="#990531"/>
+      <stop offset="1" stop-color="#CC5311"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="28%" cy="26%" r="48%">
+      <stop offset="0" stop-color="#F2C16D" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#F2C16D" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="42" fill="url(#g)"/>
+  <rect width="512" height="512" rx="42" fill="url(#glow)"/>
+  <circle cx="256" cy="256" r="138" fill="none" stroke="#F8EFE4" stroke-width="18" opacity="0.38"/>
+  <circle cx="256" cy="256" r="88" fill="#F2C16D"/>
+  <path d="M220 318h92M252 318c54-26 10-73 28-132" fill="none" stroke="#930531" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M245 203c-35-39-76-39-124-20 16 47 45 69 91 66 15-1 27-17 33-46z" fill="#930531"/>
+  <path d="M286 166c23-47 61-63 114-54-1 51-24 83-70 95-16 4-33-10-44-41z" fill="#930531"/>
+</svg>

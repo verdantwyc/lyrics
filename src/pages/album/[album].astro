@@ -1,0 +1,28 @@
+---
+import { getCollection } from 'astro:content';
+import SongCard from '../../components/SongCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { albumConfig } from '../../config/site';
+
+export function getStaticPaths() {
+  return Object.keys(albumConfig).map((album) => ({ params: { album } }));
+}
+
+const album = decodeURIComponent(Astro.params.album ?? '');
+const config = albumConfig[album as keyof typeof albumConfig];
+const songs = (await getCollection('songs'))
+  .filter((song) => !song.data.draft && song.data.album === album)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+---
+
+<BaseLayout title={album} description={config.description}>
+  <section class="page-heading page-heading--album" style={`--album-color:${config.color}`}>
+    <p class="eyebrow">album</p>
+    <h1>{album}</h1>
+    <p>{config.description}</p>
+    <span>{songs.length} 首作品</span>
+  </section>
+  <section class="card-grid">
+    {songs.map((song) => <SongCard song={song} />)}
+  </section>
+</BaseLayout>

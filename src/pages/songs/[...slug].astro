@@ -1,0 +1,194 @@
+---
+import { getCollection, render } from 'astro:content';
+import ExportButton from '../../components/ExportButton';
+import LikeButton from '../../components/LikeButton';
+import LyricsCardMaker from '../../components/LyricsCardMaker';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { albumHref, roleHref, withBase } from '../../config/site';
+import { coverColor, isOriginalVocal, songRoles } from '../../utils/songMeta';
+
+export async function getStaticPaths() {
+  const songs = await getCollection('songs');
+  return songs.filter((song) => !song.data.draft).map((song) => ({
+    params: { slug: song.id },
+    props: { song },
+  }));
+}
+
+const { song } = Astro.props;
+const { Content } = await render(song);
+const rawUrl = withBase(`/raw/${song.id}.md`);
+const computedRoles = songRoles(song.data);
+const originalVocal = isOriginalVocal(song.data);
+const songColor = coverColor(song.data);
+const platformIcon = (label: string, url: string) => {
+  const text = `${label} ${url}`.toLowerCase();
+  if (text.includes('spotify')) return 'spotify';
+  if (text.includes('163') || text.includes('netease')) return 'netease';
+  if (text.includes('qq') || text.includes('y.qq')) return 'qq';
+  if (text.includes('bilibili') || text.includes('b23.tv') || text.includes('b站')) return 'bilibili';
+  return 'link';
+};
+const platformName = (type: string, fallback: string) => {
+  if (type === 'qq') return 'QQ音乐';
+  if (type === 'netease') return '网易云';
+  if (type === 'spotify') return 'Spotify';
+  if (type === 'bilibili') return 'B站';
+  return fallback || '打开链接';
+};
+---
+
+<BaseLayout title={song.data.title} description={song.data.description}>
+  <article class="song-page">
+    <header class="song-hero" style={`--song-color:${songColor}`}>
+      <div>
+        <p class="eyebrow">{song.data.album}</p>
+        <h1>{song.data.title}</h1>
+        {song.data.description && <p>{song.data.description}</p>}
+        <div class="chip-row">
+          {computedRoles.map((role) => <a class="chip" href={roleHref(role)}>{role}</a>)}
+          {originalVocal && <a class="chip chip--warm" href={withBase('/category/vocal')}>原唱</a>}
+          <a class="chip" href={albumHref(song.data.album)}>{song.data.album}</a>
+        </div>
+      </div>
+      <div class="song-actions">
+        <LikeButton client:load noteId={song.id} />
+        <ExportButton client:load title={song.data.title} rawUrl={rawUrl} />
+        <LyricsCardMaker client:load title={song.data.title} album={song.data.album} />
+      </div>
+    </header>
+
+    <section class="metadata-block">
+      <dl>
+        <div><dt>演唱</dt><dd>{song.data.vocalist}</dd></div>
+        <div><dt>作词</dt><dd>{song.data.lyricist}</dd></div>
+        <div><dt>作曲</dt><dd>{song.data.composer}</dd></div>
+        <div><dt>编曲</dt><dd>{song.data.arranger}</dd></div>
+        <div><dt>制作人</dt><dd>{song.data.producer}</dd></div>
+        <div><dt>录音</dt><dd>{song.data.recording}</dd></div>
+        <div><dt>混音</dt><dd>{song.data.mixer}</dd></div>
+        <div><dt>母带</dt><dd>{song.data.mastering}</dd></div>
+        <div><dt>专辑</dt><dd><a href={albumHref(song.data.album)}>{song.data.album}</a></dd></div>
+      </dl>
+    </section>
+
+    <section class="prose" data-collapsible="pending">
+      <Content />
+    </section>
+
+    <script is:inline>
+      function hydrateCollapsibleProse() {
+        const prose = document.querySelector('.prose[data-collapsible="pending"]');
+        if (!prose) return;
+        const collapsibleTitles = new Set(['简介', '簡介', '歌词', '歌詞', '英文歌词', '英文歌詞', 'lyrics translation', '创作理念', '創作理念', '英文创作理念', '英文創作理念', 'statement', 'artist statement']);
+        const children = Array.from(prose.children);
+        const nextChildren = [];
+        let current = null;
+
+        children.forEach((child) => {
+          if (child.tagName === 'H2' && collapsibleTitles.has(child.textContent.trim().toLowerCase())) {
+            current = document.createElement('details');
+            current.className = 'prose-panel';
+            const summary = document.createElement('summary');
+            const headingText = child.textContent.trim();
+            summary.textContent = headingText.toLowerCase() === 'statement' ? 'Artist Statement' : headingText;
+            summary.dataset.sectionTitle = headingText.toLowerCase();
+            current.append(summary);
+            nextChildren.push(current);
+            child.remove();
+            return;
+          }
+
+          if (current) {
+            current.append(child);
+          } else {
+            nextChildren.push(child);
+          }
+        });
+
+        prose.replaceChildren(...nextChildren);
+        const emptySectionText = '施工中，暫無相關資訊。';
+        const emptySectionTitles = new Set(['简介', '簡介', '创作理念', '創作理念', '英文创作理念', '英文創作理念', 'statement', 'artist statement']);
+        const quoteSectionTitles = new Set(['创作理念', '創作理念', '英文创作理念', '英文創作理念', 'statement', 'artist statement']);
+        const placeholderPattern = /^（待[补補]充）$/;
+        const unwrapOuterQuote = (text) => {
+          const trimmed = text.trim();
+          const quoteChars = new Set(['"', '＂', '“', '”', '「', '」', '『', '』']);
+          let start = 0;
+          let end = trimmed.length;
+          while (start < end && quoteChars.has(trimmed[start])) start += 1;
+          while (end > start && quoteChars.has(trimmed[end - 1])) end -= 1;
+          if (start > 0 && end < trimmed.length && end > start) {
+            return trimmed.slice(start, end).trim();
+          }
+          return null;
+        };
+        const normalizeEnglishApostrophes = (text) =>
+          text
+            .replace(/([A-Za-z])([’'])\s+([A-Za-z])/g, '$1$2$3')
+            .replace(/([A-Za-z])’([A-Za-z])/g, "$1'$2");
+
+        prose.querySelectorAll('.prose-panel').forEach((panel) => {
+          const summary = panel.querySelector('summary');
+          const title = summary?.dataset.sectionTitle || summary?.textContent?.trim().toLowerCase();
+          if (!title || !emptySectionTitles.has(title)) return;
+
+          const panelText = Array.from(panel.children)
+            .filter((child) => child.tagName !== 'SUMMARY')
+            .map((child) => child.textContent.trim())
+            .join('')
+            .trim();
+
+          if (!panelText || placeholderPattern.test(panelText)) {
+            Array.from(panel.children).forEach((child) => {
+              if (child.tagName !== 'SUMMARY') child.remove();
+            });
+            const emptyState = document.createElement('p');
+            emptyState.className = 'prose-empty-state';
+            emptyState.textContent = emptySectionText;
+            panel.append(emptyState);
+          }
+        });
+        prose.querySelectorAll('.prose-panel').forEach((panel) => {
+          const summary = panel.querySelector('summary');
+          const title = summary?.dataset.sectionTitle || summary?.textContent?.trim().toLowerCase();
+          if (!title || !quoteSectionTitles.has(title)) return;
+
+          panel.querySelectorAll('p').forEach((paragraph) => {
+            const unwrapped = unwrapOuterQuote(paragraph.textContent ?? '');
+            if (!unwrapped) return;
+            const isLatinQuote = title === 'statement' || title === 'artist statement' || title.includes('英文') || /^[\x00-\x7F]*$/.test(unwrapped);
+            const quoteText = isLatinQuote ? normalizeEnglishApostrophes(unwrapped) : unwrapped;
+            paragraph.textContent = quoteText;
+            paragraph.classList.add('prose-quote-bubble');
+            if (isLatinQuote) {
+              paragraph.classList.add('prose-quote-bubble--latin');
+              paragraph.lang = 'en';
+            }
+          });
+        });
+        prose.dataset.collapsible = 'ready';
+      }
+      hydrateCollapsibleProse();
+      document.addEventListener('astro:page-load', hydrateCollapsibleProse);
+    </script>
+
+    {song.data.externalLinks.length > 0 && (
+      <section class="external-links">
+        {song.data.externalLinks.map((link) => (
+          <a class={`platform-button platform-${platformIcon(link.label, link.url)}`} href={link.url} rel="noreferrer" target="_blank" aria-label={link.label}>
+            <span class="platform-icon" aria-hidden="true">
+              {platformIcon(link.label, link.url) === 'spotify' && 'S'}
+              {platformIcon(link.label, link.url) === 'netease' && '☁'}
+              {platformIcon(link.label, link.url) === 'qq' && '♪'}
+              {platformIcon(link.label, link.url) === 'bilibili' && 'B'}
+              {platformIcon(link.label, link.url) === 'link' && '↗'}
+            </span>
+            <span>{platformName(platformIcon(link.label, link.url), link.label)}</span>
+          </a>
+        ))}
+      </section>
+    )}
+
+  </article>
+</BaseLayout>

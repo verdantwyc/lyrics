@@ -1,0 +1,20 @@
+---
+import { getCollection } from 'astro:content';
+import SongCard from '../components/SongCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const songs = (await getCollection('songs'))
+  .filter((song) => !song.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+---
+
+<BaseLayout title="全部作品">
+  <section class="page-heading">
+    <p class="eyebrow">all works</p>
+    <h1>全部作品</h1>
+    <p>所有未标记 draft 的 Markdown 都会出现在这里。</p>
+  </section>
+  <section class="card-grid">
+    {songs.map((song) => <SongCard song={song} />)}
+  </section>
+</BaseLayout>

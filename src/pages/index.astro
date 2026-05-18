@@ -1,17 +1,110 @@
 ---
+import { getCollection } from 'astro:content';
+import SongCard from '../components/SongCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { albumConfig, albumHref, roleHref, roles, siteDescription, withBase } from '../config/site';
+import { roleCounts as getRoleCounts, vocalCount as getVocalCount } from '../utils/songMeta';
 
+const songs = (await getCollection('songs')).filter((song) => !song.data.draft);
+const noteTitles = ['单向镜面', '镜渊MirrorGlass', 'Tita Tita'];
+const selectedNotes = noteTitles
+  .map((title) => songs.find((song) => song.data.title === title))
+  .filter(Boolean);
+const recent = [...songs].sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime()).slice(0, 6);
+const roleCounts = getRoleCounts(songs);
+const vocalCount = getVocalCount(songs);
+const albumCounts = Object.keys(albumConfig).map((album) => ({
+  album,
+  count: songs.filter((song) => song.data.album === album).length,
+}));
+const activeAlbumCounts = albumCounts.filter(({ count }) => count > 0);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<BaseLayout title="首頁" description={siteDescription}>
+  <section class="hero">
+    <div class="hero__copy">
+      <div class="player-top">
+        <div class="speaker speaker--left" aria-hidden="true"></div>
+        <div class="cover-window">
+          <img class="cover-logo" src={withBase('/verdant-profile.webp')} alt="" loading="lazy" />
+        </div>
+        <div class="speaker speaker--right" aria-hidden="true"></div>
+      </div>
+      <div class="player-display">
+        <p class="eyebrow">retro music archive</p>
+        <h1>王允宸作品手札</h1>
+        <p>{siteDescription}</p>
+      </div>
+      <div class="player-meter" aria-hidden="true">
+        <span>0:00</span>
+        <div class="meter-track"><i></i></div>
+        <span>5:31</span>
+      </div>
+      <div class="player-controls">
+        <span class="knob"></span>
+        <div class="transport">
+          <a href={withBase('/all')}>全部</a><span>◀</span><span>■</span><span>▶</span><span>▶▶</span><a href={withBase('/category/original')}>分类</a>
+        </div>
+        <span class="knob knob--right"></span>
+      </div>
+    </div>
+    <div class="hero__bento" aria-label="数据概览">
+      <div class="cabinet-title">统计档案柜</div>
+      <a class="hero-stat hero-stat--large" href={withBase('/all')}>
+        <strong class="stat-number">{songs.length}</strong>
+        <span class="stat-label">首作品</span>
+      </a>
+      <a class="hero-stat hero-stat--warm" href={withBase('/category/vocal')}>
+        <strong class="stat-number">{vocalCount}</strong>
+        <span class="stat-label">原唱/演唱</span>
+      </a>
+      {roles.map((role) => (
+        <a class="hero-stat" href={roleHref(role)}>
+          <strong class="stat-number">{roleCounts[role]}</strong>
+          <span class="stat-label">{role}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="section">
+    <div>
+      <div class="section__header">
+        <div>
+          <p class="eyebrow">album shelf</p>
+          <h2>专辑唱片柜</h2>
+        </div>
+      </div>
+      <div class="album-grid album-grid--wide">
+        {activeAlbumCounts.map(({ album, count }, index) => (
+          <a class="album-tile" href={albumHref(album)} style={`--album-color:${albumConfig[album].color}`} aria-label={`${album}，${count} 首`}>
+            <svg class="album-ring-text" viewBox="0 0 200 200" aria-hidden="true">
+              <defs>
+                <path id={`album-title-${index}`} d="M 24 102 A 76 76 0 0 1 176 102" />
+                <path id={`album-count-${index}`} d="M 24 102 A 76 76 0 0 0 176 102" />
+              </defs>
+              <text class="album-ring-title">
+                <textPath href={`#album-title-${index}`} startOffset="50%" text-anchor="middle">{album}</textPath>
+              </text>
+              <text class="album-ring-count">
+                <textPath href={`#album-count-${index}`} startOffset="50%" text-anchor="middle">{count} 首</textPath>
+              </text>
+            </svg>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section__header">
+      <div>
+        <p class="eyebrow">selected notes</p>
+        <h2>作品便签</h2>
+      </div>
+    </div>
+    <div class="bento-grid">
+      {selectedNotes.length ? selectedNotes.map((song) => <SongCard song={song} />) : recent.slice(0, 3).map((song) => <SongCard song={song} />)}
+    </div>
+  </section>
+</BaseLayout>

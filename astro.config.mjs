@@ -1,5 +1,21 @@
-// @ts-check
 import { defineConfig } from 'astro/config';
+import tailwindcss from '@tailwindcss/vite';
+import mdx from '@astrojs/mdx';
+import react from '@astrojs/react';
 
-// https://astro.build/config
-export default defineConfig({});
+const base = process.env.BASE_PATH ?? '/';
+
+export default defineConfig({
+  base,
+  trailingSlash: 'never',
+  vite: {
+    plugins: [tailwindcss()]
+  },
+  integrations: [mdx(), react()],
+  markdown: {
+    shikiConfig: {
+      theme: 'github-dark',
+      wrap: true
+    }
+  }
+});

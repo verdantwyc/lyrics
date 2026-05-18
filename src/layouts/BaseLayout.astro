@@ -1,0 +1,80 @@
+---
+import '../styles/global.css';
+import { ClientRouter } from 'astro:transitions';
+import { getCollection } from 'astro:content';
+import SearchPanel from '../components/SearchPanel';
+import { roleConfig, roleHref, siteDescription, siteName, withBase } from '../config/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { title = siteName, description = siteDescription } = Astro.props;
+const pageTitle = title === siteName ? siteName : `${title} - ${siteName}`;
+const songs = (await getCollection('songs')).filter((song) => !song.data.draft);
+const translatedCount = songs.filter((song) => {
+  const section = song.body.match(/## Lyrics Translation\s*\n([\s\S]*?)(?=\n## |$)/i)?.[1] ?? '';
+  const clean = section
+    .replace(/[（(]\s*待[补補]充.*?[）)]/g, '')
+    .replace(/待[补補]充/g, '')
+    .trim();
+  return clean.length > 0;
+}).length;
+const translationRate = songs.length ? Math.round((translatedCount / songs.length) * 100) : 0;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="preconnect" href="https://fonts.font.im" />
+    <link href="https://fonts.font.im/css?family=Inter:500,700,800,900|Noto+Serif+SC:600,700,900|Noto+Sans+SC:500,700,900" rel="stylesheet" />
+    <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
+    <link rel="icon" href={withBase('/favicon.ico')} />
+    <ClientRouter />
+    <title>{pageTitle}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href={withBase('/')}>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M7 20h10" />
+            <path d="M10 20c5.5-2.5.8-6.4 3-10" />
+            <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z" />
+            <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-.8 1.6-2.1 1.7-4.6-2.7.1-4 1-4.9 2z" />
+          </svg>
+        </span>
+        <span>{siteName}</span>
+      </a>
+      <nav class="nav" aria-label="主要导览">
+        <a href={withBase('/')}>首页</a>
+        <a href={withBase('/all')}>全部歌曲</a>
+        <a href={withBase('/category/vocal')}>原唱</a>
+        {Object.values(roleConfig).map((role) => (
+          <a href={roleHref(role.label)}>{role.label}</a>
+        ))}
+      </nav>
+      <div class="header-actions">
+        <a class="museum-link" href={withBase('/museum')} aria-label="回到博物馆页面" title="博物馆"></a>
+        <SearchPanel client:load indexUrl={withBase('/search-index.json')} />
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="footer-tags" aria-label="整理状态">
+        <span>英翻完整 {translatedCount}/{songs.length}</span>
+        <span>{translationRate}%</span>
+        <span>待补 {songs.length - translatedCount}</span>
+      </div>
+      <p class="made-with">Made with ❤️</p>
+      <p class="copyright">Verdant・王允宸作品手札</p>
+    </footer>
+  </body>
+</html>
