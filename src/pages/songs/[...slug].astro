@@ -52,9 +52,9 @@ const platformName = (type: string, fallback: string) => {
         </div>
       </div>
       <div class="song-actions">
-        <LikeButton client:load noteId={song.id} />
-        <ExportButton client:load title={song.data.title} rawUrl={rawUrl} />
-        <LyricsCardMaker client:load title={song.data.title} album={song.data.album} />
+        <LikeButton client:idle noteId={song.id} />
+        <ExportButton client:idle title={song.data.title} rawUrl={rawUrl} />
+        <LyricsCardMaker client:idle title={song.data.title} album={song.data.album} />
       </div>
     </header>
 

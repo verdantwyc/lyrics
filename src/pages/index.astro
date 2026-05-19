@@ -26,7 +26,16 @@ const activeAlbumCounts = albumCounts.filter(({ count }) => count > 0);
       <div class="player-top">
         <div class="speaker speaker--left" aria-hidden="true"></div>
         <div class="cover-window">
-          <img class="cover-logo" src={withBase('/verdant-profile.webp')} alt="" loading="lazy" />
+          <img
+            class="cover-logo"
+            src={withBase('/verdant-profile-360.webp')}
+            alt=""
+            width="360"
+            height="360"
+            loading="eager"
+            decoding="async"
+            fetchpriority="high"
+          />
         </div>
         <div class="speaker speaker--right" aria-hidden="true"></div>
       </div>

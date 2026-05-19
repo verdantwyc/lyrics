@@ -55,7 +55,9 @@ export type Album = (typeof albums)[number];
 export function withBase(path = '/') {
   if (/^https?:\/\//.test(path)) return path;
   const base = import.meta.env.BASE_URL === '/' ? '' : import.meta.env.BASE_URL.replace(/\/$/, '');
-  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const input = path.startsWith('/') ? path : `/${path}`;
+  const hasFileExtension = /\/[^/]+\.[^/]+$/.test(input);
+  const normalized = input === '/' || hasFileExtension || input.endsWith('/') ? input : `${input}/`;
   return `${base}${normalized}` || '/';
 }
 

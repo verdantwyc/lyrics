@@ -7,7 +7,7 @@ const base = process.env.BASE_PATH ?? '/';
 
 export default defineConfig({
   base,
-  trailingSlash: 'never',
+  trailingSlash: 'always',
   vite: {
     plugins: [tailwindcss()]
   },

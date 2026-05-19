@@ -1,8 +1,7 @@
 ---
 import '../styles/global.css';
-import { ClientRouter } from 'astro:transitions';
 import { getCollection } from 'astro:content';
-import SearchPanel from '../components/SearchPanel';
+import SearchPanel from '../components/SearchPanel.astro';
 import { roleConfig, roleHref, siteDescription, siteName, withBase } from '../config/site';
 
 interface Props {
@@ -31,11 +30,11 @@ const translationRate = songs.length ? Math.round((translatedCount / songs.lengt
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
-    <link rel="preconnect" href="https://fonts.font.im" />
-    <link href="https://fonts.font.im/css?family=Inter:500,700,800,900|Noto+Serif+SC:600,700,900|Noto+Sans+SC:500,700,900" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.font.im" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.font.im" />
+    <link href="https://fonts.font.im/css?family=Inter:700,900|Noto+Serif+SC:700,900|Noto+Sans+SC:700,900&display=swap" rel="stylesheet" />
     <link rel="icon" href={withBase('/favicon.svg')} type="image/svg+xml" />
     <link rel="icon" href={withBase('/favicon.ico')} />
-    <ClientRouter />
     <title>{pageTitle}</title>
   </head>
   <body>
@@ -60,8 +59,8 @@ const translationRate = songs.length ? Math.round((translatedCount / songs.lengt
         ))}
       </nav>
       <div class="header-actions">
-        <a class="museum-link" href={withBase('/museum')} aria-label="回到博物馆页面" title="博物馆"></a>
-        <SearchPanel client:load indexUrl={withBase('/search-index.json')} />
+        <a class="museum-link" href="https://verdant-c5az00169.maozi.io/" aria-label="回到博物馆页面" title="博物馆"></a>
+        <SearchPanel indexUrl={withBase('/search-index.json')} />
       </div>
     </header>
     <main>
@@ -76,5 +75,33 @@ const translationRate = songs.length ? Math.round((translatedCount / songs.lengt
       <p class="made-with">Made with ❤️</p>
       <p class="copyright">Verdant・王允宸作品手札</p>
     </footer>
+    <div class="page-loader" aria-live="polite" aria-hidden="true">
+      <span class="page-loader__disc"></span>
+      <span>翻找唱片中...</span>
+    </div>
+    <script is:inline>
+      (() => {
+        const samePageHash = (url) =>
+          url.origin === location.origin &&
+          url.pathname === location.pathname &&
+          url.search === location.search &&
+          url.hash;
+
+        document.addEventListener('click', (event) => {
+          const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+          if (!anchor) return;
+          if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+          if (anchor.target || anchor.hasAttribute('download')) return;
+
+          const url = new URL(anchor.href, location.href);
+          if (url.origin !== location.origin || samePageHash(url)) return;
+          document.documentElement.classList.add('is-navigating');
+        });
+
+        window.addEventListener('pageshow', () => {
+          document.documentElement.classList.remove('is-navigating');
+        });
+      })();
+    </script>
   </body>
 </html>
