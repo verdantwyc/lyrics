@@ -1,6 +1,13 @@
 packages:
   - "."
 
+dangerouslyAllowAllBuilds: true
+strictDepBuilds: false
+
 onlyBuiltDependencies:
+  - esbuild
+  - sharp
+
+ignoredBuiltDependencies:
   - esbuild
   - sharp
